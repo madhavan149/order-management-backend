@@ -2,6 +2,7 @@ package com.example.e_commerce.Controller;
 
 import com.example.e_commerce.DTO.Order.OrderRequest;
 import com.example.e_commerce.DTO.Order.OrderResponse;
+import com.example.e_commerce.Exception.UnauthorizedException;
 import com.example.e_commerce.Repository.UserRepository;
 import com.example.e_commerce.Service.OrderFacade;
 import com.example.e_commerce.Service.OrderService;
@@ -24,9 +25,15 @@ public class OrderController {
     private final OrderFacade orderFacade;
 
     @PostMapping
-    public OrderResponse placeOrder(@Valid @RequestBody OrderRequest request, Authentication auth){
+    public OrderResponse placeOrder(@Valid @RequestBody OrderRequest request,
+                                    @RequestHeader(value = "Idempotency-Key") String idemKey,
+                                    Authentication auth){
 
-        return orderFacade.placeOrder(UserId(auth), request);
+        if (idemKey != null && idemKey.length() > 64) {
+            throw new IllegalArgumentException("Idempotency-Key must be at most 64 characters");
+        }
+
+        return orderFacade.placeOrder(UserId(auth), idemKey, request);
     }
 
     @GetMapping
@@ -50,10 +57,9 @@ public class OrderController {
    }
 
    private Long UserId(Authentication auth){
-
-        return userRepository.findByName(auth.getName())
-                .orElseThrow(() -> new IllegalStateException("User not found"))
-                .getId();
+           return userRepository.findByName(auth.getName())
+                   .orElseThrow(() -> new UnauthorizedException("User not found. Please log in again."))
+                   .getId();
    }
 
    @PatchMapping("/{id}/cancel")

@@ -28,7 +28,7 @@ public class Order {
     @Column(nullable = false)
     private BigDecimal total;
 
-    @Column(unique = true)
+    @Column(unique = true, length = 64)
     private String idempotencyKey;
 
     private Instant createdAt = Instant.now();

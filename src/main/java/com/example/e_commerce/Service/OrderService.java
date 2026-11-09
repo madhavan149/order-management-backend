@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class OrderService {
@@ -32,7 +33,15 @@ public class OrderService {
 
 
     @Transactional
-    public OrderResponse placeOrder(Long userId, OrderRequest request){
+    public OrderResponse placeOrder(Long userId, String idemKey, OrderRequest request){
+
+        if (idemKey != null) {
+            Optional<Order> existing =
+                    orderRepository.findByIdempotencyKeyAndUserId(idemKey, userId);
+            if (existing.isPresent()) {
+                return OrderResponse.from(existing.get());
+            }
+        }
 
         Map<Long, Integer> merged = new LinkedHashMap<>();
         for (OrderRequest.Item line : request.items()) {
@@ -73,6 +82,7 @@ public class OrderService {
 
         }
 
+        order.setIdempotencyKey(idemKey);
         order.setTotal(total);
         Order saved = orderRepository.save(order);
         return OrderResponse.from(saved);
@@ -119,6 +129,13 @@ public class OrderService {
 
         return OrderResponse.from(order);
 
+    }
+
+    @Transactional()
+    public OrderResponse getByIdempotencyKey(String idemKey, Long userId) {
+        return orderRepository.findByIdempotencyKeyAndUserId(idemKey, userId)
+                .map(OrderResponse::from)
+                .orElseThrow(() -> new ResourceNotFoundException("order not found"));
     }
 
 

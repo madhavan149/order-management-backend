@@ -7,6 +7,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -76,6 +77,18 @@ public class GlobalExceptionHandler {
     return ResponseEntity
             .badRequest()
             .body(ex.getMessage());
+  }
+
+  @ExceptionHandler(MissingRequestHeaderException.class)
+  public ResponseEntity<Map<String, String>> handleMissingHeader(MissingRequestHeaderException ex) {
+    return ResponseEntity.badRequest()
+            .body(Map.of("error", "Missing required header: " + ex.getHeaderName()));
+  }
+
+  @ExceptionHandler(UnauthorizedException.class)
+  public ResponseEntity<Map<String, String>> handleUnauthorized(UnauthorizedException ex) {
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(Map.of("error", ex.getMessage()));
   }
 
 }

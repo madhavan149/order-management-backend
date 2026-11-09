@@ -1,6 +1,7 @@
 package com.example.e_commerce.config;
 
 import com.example.e_commerce.Exception.CustomAccessDeniedHandler;
+import com.example.e_commerce.Exception.CustomAuthenticationEntryPoint;
 import com.example.e_commerce.Security.JwtAuthenticationFilter;
 import com.example.e_commerce.Service.CustomUserDetailService;
 import org.springframework.context.annotation.Bean;
@@ -28,11 +29,12 @@ public class SecurityConfig {
 
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final JwtAuthenticationFilter jwtFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-
-    public SecurityConfig(CustomAccessDeniedHandler customAccessDeniedHandler, JwtAuthenticationFilter jwtFilter) {
+    public SecurityConfig(CustomAccessDeniedHandler customAccessDeniedHandler, JwtAuthenticationFilter jwtFilter, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.jwtFilter = jwtFilter;
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
     }
 
 
@@ -62,6 +64,7 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
